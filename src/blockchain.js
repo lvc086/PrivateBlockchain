@@ -127,7 +127,7 @@ class Blockchain {
             let curTime = parseInt(new Date().getTime().toString().slice(0, -3));
             
             //L3 - check if time elapsed is more than 5 minutes (5*60 = 300) reject and return error
-            if (curTime - msgTime > 3000000){
+            if (curTime - msgTime > 300){
                 let error = new Error('ERROR - 5 minutes or more have passed.');
                 console.error('ERROR - 5 minutes timeframe exceeded');
                 reject(error);
