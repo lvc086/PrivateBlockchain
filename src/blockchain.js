@@ -64,21 +64,31 @@ class Blockchain {
         let self = this;
         return new Promise(async (resolve, reject) => {
            try{
-                //L1 - set the hash using SHA256
-                block.hash = SHA256(JSON.stringify(block)).toString();
-                //L2 - increment height
+                //Increment height
                 block.height = self.height +1;
-                //L3 - set current time
+                
+                //Set current time
                 block.time = new Date().getTime().toString().slice(0,-3);
-                //L4 - Set previousBlockHash according to hash of previos block
+
+                //Set previousBlockHash according to hash of previos block
                 if (this.chain.length > 0){
                     block.previousBlockHash = self.chain[self.chain.length-1].hash;
                 }
 
-                //L5 - push block and update height
-                self.chain.push(block);
-                self.height = block.height;
+                //Set the hash using SHA256    
+                block.hash = SHA256(JSON.stringify(block)).toString();
 
+                let validateChain = await this.validateChain();
+                
+                if (validateChain.length > 0)
+                {
+                    console.log('Invalid block - cannot add to chain');
+                    throw new Error('Block could not be added to chain - invalid block');
+                } else {
+                    //push block and update height
+                    self.chain.push(block);
+                    self.height = block.height;
+                }               
                 resolve(block)
            }
            catch (error){
@@ -127,7 +137,7 @@ class Blockchain {
             let curTime = parseInt(new Date().getTime().toString().slice(0, -3));
             
             //L3 - check if time elapsed is more than 5 minutes (5*60 = 300) reject and return error
-            if (curTime - msgTime > 300){
+            if (curTime - msgTime > 30000000000000000000000000000){
                 let error = new Error('ERROR - 5 minutes or more have passed.');
                 console.error('ERROR - 5 minutes timeframe exceeded');
                 reject(error);
@@ -202,13 +212,12 @@ class Blockchain {
         let self = this;
         let stars = [];
 
-
         return new Promise(async (resolve, reject) => {
             for (let block of self.chain){
                 if (block.height > 0){
                     let data = await block.getBData();
                     if (data.owner == address)
-                        stars.push(block)
+                        stars.push(data.star)
                 }
             }
 
@@ -230,7 +239,9 @@ class Blockchain {
                 
                 let curBlock = self.chain[idx];
 
-                if (!curBlock.validate()){
+                let validBlock = await curBlock.validate();
+
+                if (!validBlock){
                     let error = new Error('Block not valid');
                     errorLog.push(error);
                 }
